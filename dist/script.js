@@ -175,20 +175,103 @@ function Player() {
   return /*#__PURE__*/(
     React.createElement(Bounds, { fit: true, clip: true, observe: true, margin: 10 }, /*#__PURE__*/
     React.createElement("group", { ref: player }, /*#__PURE__*/
-    React.createElement("group", null, /*#__PURE__*/
-    React.createElement("mesh", { position: [0, 0, 10], castShadow: true, receiveShadow: true }, /*#__PURE__*/
-    React.createElement("boxGeometry", { args: [15, 15, 20] }), /*#__PURE__*/
-    React.createElement("meshLambertMaterial", { color: 0xffffff, flatShading: true })), /*#__PURE__*/
+      // This group contains all the parts of the owl character
+      React.createElement("group", null,
+        // Main Body
+        React.createElement("mesh", { position: [0, 0, 8], castShadow: true, receiveShadow: true },
+          React.createElement("boxGeometry", { args: [14, 14, 16] }),
+          React.createElement("meshLambertMaterial", { color: 0x8B4513, flatShading: true })
+        ),
+        // Belly Patch
+        React.createElement("mesh", { position: [0, 10.1, 7] },
+            React.createElement("boxGeometry", { args: [14, 1, 12] }),
+            React.createElement("meshBasicMaterial", { color: 0xD2B48C })
+        ),
+        // Wings
+        React.createElement("mesh", { position: [-11, 0, 6], castShadow: true, receiveShadow: true },
+            React.createElement("boxGeometry", { args: [3, 10, 12] }),
+            React.createElement("meshLambertMaterial", { color: 0x8B4513, flatShading: true })
+        ),
+        React.createElement("mesh", { position: [11, 0, 6], castShadow: true, receiveShadow: true },
+            React.createElement("boxGeometry", { args: [3, 10, 12] }),
+            React.createElement("meshLambertMaterial", { color: 0x8B4513, flatShading: true })
+        ),
+        
+        // --- Glasses & Eyes ---
+        // Left Lens (white part)
+        React.createElement("mesh", { position: [-5, 10.2, 11] },
+          React.createElement("boxGeometry", { args: [6, 1, 6] }),
+          React.createElement("meshBasicMaterial", { color: 0xffffff })
+        ),
+        // Right Lens (white part)
+        React.createElement("mesh", { position: [5, 10.2, 11] },
+          React.createElement("boxGeometry", { args: [6, 1, 6] }),
+          React.createElement("meshBasicMaterial", { color: 0xffffff })
+        ),
+        // Left Frame - Top
+        React.createElement("mesh", { position: [-5, 10.3, 14.5] },
+          React.createElement("boxGeometry", { args: [8, 1.5, 1] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+        // Left Frame - Bottom
+        React.createElement("mesh", { position: [-5, 10.3, 7.5] },
+          React.createElement("boxGeometry", { args: [8, 1.5, 1] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+        // Left Frame - Side
+        React.createElement("mesh", { position: [-9.5, 10.3, 11] },
+          React.createElement("boxGeometry", { args: [1, 1.5, 8] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+         // Right Frame - Top
+        React.createElement("mesh", { position: [5, 10.3, 14.5] },
+          React.createElement("boxGeometry", { args: [8, 1.5, 1] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+        // Right Frame - Bottom
+        React.createElement("mesh", { position: [5, 10.3, 7.5] },
+          React.createElement("boxGeometry", { args: [8, 1.5, 1] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+        // Right Frame - Side
+        React.createElement("mesh", { position: [9.5, 10.3, 11] },
+          React.createElement("boxGeometry", { args: [1, 1.5, 8] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+        // Bridge
+        React.createElement("mesh", { position: [0, 10.3, 11] },
+          React.createElement("boxGeometry", { args: [3, 1.5, 2] }),
+          React.createElement("meshBasicMaterial", { color: 0x333333 })
+        ),
+        // --- End Glasses & Eyes ---
 
-    React.createElement("mesh", { position: [0, 0, 21], castShadow: true, receiveShadow: true }, /*#__PURE__*/
-    React.createElement("boxGeometry", { args: [2, 4, 2] }), /*#__PURE__*/
-    React.createElement("meshLambertMaterial", { color: 0xf0619a, flatShading: true }))), /*#__PURE__*/
-
-
-    React.createElement(DirectionalLight, { ref: lightRef }))));
-
-
-
+        // Beak
+        React.createElement("mesh", { position: [0, 10.5, 5] },
+          React.createElement("coneGeometry", { args: [1.5, 3, 4] }),
+          React.createElement("meshLambertMaterial", { color: 0xFFA500, flatShading: true })
+        ),
+        // Ear Tufts
+        React.createElement("mesh", { position: [-6, 0, 17], "rotation-z": -0.5 },
+          React.createElement("coneGeometry", { args: [2, 6, 4] }),
+          React.createElement("meshLambertMaterial", { color: 0x8B4513, flatShading: true })
+        ),
+        React.createElement("mesh", { position: [6, 0, 17], "rotation-z": 0.5 },
+          React.createElement("coneGeometry", { args: [2, 6, 4] }),
+          React.createElement("meshLambertMaterial", { color: 0x8B4513, flatShading: true })
+        ),
+        // Legs
+        React.createElement("mesh", { position: [-4, 8, -2], castShadow: true, receiveShadow: true },
+            React.createElement("boxGeometry", { args: [3, 3, 4] }),
+            React.createElement("meshLambertMaterial", { color: 0xFFA500, flatShading: true })
+        ),
+        React.createElement("mesh", { position: [4, 8, -2], castShadow: true, receiveShadow: true },
+            React.createElement("boxGeometry", { args: [3, 3, 4] }),
+            React.createElement("meshLambertMaterial", { color: 0xFFA500, flatShading: true })
+        )
+      ), /*#__PURE__*/
+      React.createElement(DirectionalLight, { ref: lightRef })
+    ))
+  );
 }
 
 function DirectionalLight({ ref }) {
@@ -490,7 +573,8 @@ function setPosition(player, progress) {
 
   player.position.x = THREE.MathUtils.lerp(startX, endX, progress);
   player.position.y = THREE.MathUtils.lerp(startY, endY, progress);
-  player.children[0].position.z = Math.sin(progress * Math.PI) * 8;
+  // I've added a base height of 10 to prevent the model from clipping through the ground
+  player.children[0].position.z = 10 + Math.sin(progress * Math.PI) * 8;
 }
 
 function setRotation(player, progress) {
