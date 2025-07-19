@@ -8,6 +8,19 @@ import { GAME_CONFIG, TILES_PER_ROW } from './constants.js';
 import { generateRows, calculateFinalPosition, getDifficultyLevel, isMobileDevice, createSwipeDetector } from './utils.js';
 import { soundSystem } from './sound.js';
 
+// Mobile device auto-redirect (unless already on mobile page or forced)
+if (typeof window !== 'undefined' && !window.FORCE_MOBILE_MODE) {
+  const isMobile = isMobileDevice();
+  const currentPath = window.location.pathname;
+  
+  // Redirect mobile users to mobile.html if not already there
+  if (isMobile && !currentPath.includes('mobile.html')) {
+    const currentUrl = new URL(window.location);
+    currentUrl.pathname = currentUrl.pathname.replace(/\/[^\/]*$/, '/mobile.html');
+    window.location.href = currentUrl.toString();
+  }
+}
+
 const minTileIndex = GAME_CONFIG.MIN_TILE_INDEX;
 const maxTileIndex = GAME_CONFIG.MAX_TILE_INDEX;
 const tilesPerRow = TILES_PER_ROW;
@@ -160,7 +173,7 @@ function Controls() {
   const [showMobileInfo, setShowMobileInfo] = useState(false);
 
   useEffect(() => {
-    const mobile = isMobileDevice();
+    const mobile = window.FORCE_MOBILE_MODE || isMobileDevice();
     setIsMobile(mobile);
     
     if (mobile) {

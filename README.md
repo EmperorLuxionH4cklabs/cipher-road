@@ -14,7 +14,12 @@ A Crossy Road clone built with React Three Fiber, featuring a cyberpunk-inspired
 ### Controls
 - **Arrow Keys** or **Touch Controls** for movement
 - **Space** or **Escape** to pause/resume
-- **Responsive mobile design** with larger touch targets
+- **Mobile Features**:
+  - Automatic mobile detection and redirect to optimized version
+  - Full-screen swipe gestures for movement (swipe up/down/left/right)
+  - Enhanced touch buttons with haptic feedback
+  - Larger touch targets and improved spacing
+  - Mobile-specific UI optimizations
 
 ### Visual & Audio Features
 - **3D Graphics** with shadows and lighting
@@ -35,11 +40,12 @@ A Crossy Road clone built with React Three Fiber, featuring a cyberpunk-inspired
 ### File Structure
 ```
 dist/
-├── index.html          # Main HTML file
+├── index.html          # Main HTML file (desktop) with mobile redirect
+├── mobile.html         # Mobile-optimized version
 ├── style.css           # Styles and responsive design
 ├── script.js           # Main game logic and React components
 ├── constants.js        # Game configuration and constants
-├── utils.js            # Utility functions and generators
+├── utils.js            # Utility functions and mobile detection
 ├── sound.js            # Audio system and sound effects
 └── particles.js        # Particle system (future enhancement)
 ```
@@ -51,6 +57,7 @@ dist/
 - **Vehicle System** - Traffic generation and animation
 - **Sound System** - Procedural audio feedback
 - **Difficulty System** - Progressive challenge scaling
+- **Mobile System** - Touch controls and swipe detection
 
 ### Performance Optimizations
 - **View Frustum Culling** - Hide distant vehicles
@@ -85,6 +92,28 @@ The modular architecture makes it easy to add:
 - Different character models
 - Enhanced visual effects
 - Multiplayer functionality
+
+## Mobile Experience
+
+### Automatic Detection & Redirect
+- Mobile devices are automatically detected and redirected to `mobile.html`
+- Optimized mobile interface loads with enhanced controls
+
+### Enhanced Mobile Controls
+- **Swipe Gestures**: Full-screen swipe detection for movement
+  - Swipe up: Move forward
+  - Swipe down: Move backward  
+  - Swipe left: Move left
+  - Swipe right: Move right
+- **Touch Buttons**: Larger, more responsive control buttons
+- **Haptic Feedback**: Vibration feedback on supported devices
+- **Visual Feedback**: Enhanced button animations and states
+
+### Mobile Optimizations
+- **Larger Touch Targets**: 90x70px buttons with 15px spacing
+- **Improved Layout**: Fixed controls positioning for thumb navigation
+- **Touch Prevention**: Disabled zoom, text selection, and unwanted scrolling
+- **Performance**: Mobile-specific optimizations and reduced resource usage
 
 ## Browser Compatibility
 - Modern browsers with WebGL support

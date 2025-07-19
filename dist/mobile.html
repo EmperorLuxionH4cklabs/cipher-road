@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" >
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cipher Road - Mobile</title>
+  <link rel="stylesheet" href="./style.css">
+  <style>
+    /* Mobile-first optimizations */
+    body {
+      overscroll-behavior: none;
+      touch-action: manipulation;
+      -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Force mobile controls to be visible */
+    #controls {
+      position: fixed !important;
+      bottom: 20px !important;
+      left: 50% !important;
+      transform: translateX(-50%) !important;
+      z-index: 1000 !important;
+    }
+    
+    #controls div {
+      grid-template-columns: 90px 90px 90px !important;
+      gap: 15px !important;
+    }
+    
+    #controls button {
+      height: 70px !important;
+      font-size: 28px !important;
+      border-radius: 15px !important;
+      background: linear-gradient(145deg, #ffffff, #f0f0f0) !important;
+      border: 2px solid #ddd !important;
+      transition: all 0.15s ease !important;
+      user-select: none !important;
+      -webkit-user-select: none !important;
+      touch-action: manipulation !important;
+    }
+    
+    #controls button:active {
+      transform: translateY(3px) scale(0.95) !important;
+      background: linear-gradient(145deg, #e0e0e0, #d0d0d0) !important;
+    }
+    
+    /* Mobile swipe zone always visible */
+    .mobile-swipe-zone {
+      display: block !important;
+    }
+    
+    /* Enhanced mobile score */
+    #score {
+      font-size: 1.3em !important;
+      top: 15px !important;
+      left: 15px !important;
+      z-index: 100 !important;
+    }
+  </style>
+</head>
+<body>
+<!-- Mobile-optimized version of Cipher Road -->
+
+<div id="root" />
+
+<script>
+  // Force mobile mode
+  window.FORCE_MOBILE_MODE = true;
+  
+  // Prevent default touch behaviors
+  document.addEventListener('touchstart', function(e) {
+    if (e.target.tagName !== 'BUTTON') {
+      // Allow touch on buttons, prevent elsewhere to avoid scrolling
+    }
+  }, { passive: true });
+  
+  document.addEventListener('touchmove', function(e) {
+    e.preventDefault();
+  }, { passive: false });
+  
+  // Performance optimizations for mobile
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      // Future: could register service worker for offline play
+    });
+  }
+</script>
+<script type="module" src="./script.js"></script>
+
+</body>
+</html>
