@@ -720,7 +720,7 @@ function useVehicleAnimation(ref, direction, speed) {
 
     // Performance optimization: only animate vehicles near the player
     const distanceFromPlayer = Math.abs(vehicle.position.y - playerState.currentRow * tileSize);
-    if (distanceFromPlayer > 5 * tileSize) {
+    if (distanceFromPlayer > 10 * tileSize) {
       vehicle.visible = false;
       return;
     } else {
