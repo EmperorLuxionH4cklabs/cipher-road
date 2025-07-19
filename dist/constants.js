@@ -17,6 +17,15 @@ export const GAME_CONFIG = {
   // Vehicle speeds (pixels per second)
   VEHICLE_SPEEDS: [125, 156, 188],
   
+  // Difficulty progression
+  DIFFICULTY: {
+    SPEED_INCREASE_PER_LEVEL: 20,
+    LEVEL_UP_EVERY_ROWS: 10,
+    MAX_SPEED_MULTIPLIER: 2.5,
+    MIN_VEHICLES_PER_LANE: 2,
+    MAX_VEHICLES_PER_LANE: 5
+  },
+  
   // Forest generation
   TREES_PER_FOREST: 4,
   TREE_HEIGHTS: [20, 45, 60],

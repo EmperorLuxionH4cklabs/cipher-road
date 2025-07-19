@@ -6,21 +6,23 @@ export function randomElement(array) {
   return array[Math.floor(Math.random() * array.length)];
 }
 
-// Generate multiple rows
-export function generateRows(amount) {
+// Generate multiple rows with progressive difficulty
+export function generateRows(amount, startingRow = 0) {
   const rows = [];
   for (let i = 0; i < amount; i++) {
-    const rowData = generateRow();
+    const currentRow = startingRow + i;
+    const difficultyLevel = getDifficultyLevel(currentRow);
+    const rowData = generateRow(difficultyLevel);
     rows.push(rowData);
   }
   return rows;
 }
 
-// Generate a single row
-export function generateRow() {
+// Generate a single row with difficulty
+export function generateRow(difficultyLevel = 0) {
   const type = randomElement(ROW_TYPES);
-  if (type === "car") return generateCarLaneMetadata();
-  if (type === "truck") return generateTruckLaneMetadata();
+  if (type === "car") return generateCarLaneMetadata(difficultyLevel);
+  if (type === "truck") return generateTruckLaneMetadata(difficultyLevel);
   return generateForestMetadata();
 }
 
@@ -42,14 +44,40 @@ export function generateForestMetadata() {
   return { type: "forest", trees };
 }
 
-// Generate car lane metadata
-export function generateCarLaneMetadata() {
+// Calculate difficulty level based on current score
+export function getDifficultyLevel(score) {
+  return Math.floor(score / GAME_CONFIG.DIFFICULTY.LEVEL_UP_EVERY_ROWS);
+}
+
+// Get adjusted speed based on difficulty
+export function getAdjustedSpeed(baseSpeed, difficultyLevel) {
+  const speedIncrease = difficultyLevel * GAME_CONFIG.DIFFICULTY.SPEED_INCREASE_PER_LEVEL;
+  const multiplier = Math.min(
+    1 + speedIncrease / 100,
+    GAME_CONFIG.DIFFICULTY.MAX_SPEED_MULTIPLIER
+  );
+  return baseSpeed * multiplier;
+}
+
+// Get vehicle count based on difficulty
+export function getVehicleCount(baseCount, difficultyLevel) {
+  const additionalVehicles = Math.floor(difficultyLevel / 2);
+  return Math.min(
+    baseCount + additionalVehicles,
+    GAME_CONFIG.DIFFICULTY.MAX_VEHICLES_PER_LANE
+  );
+}
+
+// Generate car lane metadata with difficulty
+export function generateCarLaneMetadata(difficultyLevel = 0) {
   const direction = randomElement([true, false]);
-  const speed = randomElement(GAME_CONFIG.VEHICLE_SPEEDS);
+  const baseSpeed = randomElement(GAME_CONFIG.VEHICLE_SPEEDS);
+  const speed = getAdjustedSpeed(baseSpeed, difficultyLevel);
+  const vehicleCount = getVehicleCount(GAME_CONFIG.CARS_PER_LANE, difficultyLevel);
 
   const occupiedTiles = new Set();
 
-  const vehicles = Array.from({ length: GAME_CONFIG.CARS_PER_LANE }, () => {
+  const vehicles = Array.from({ length: vehicleCount }, () => {
     let initialTileIndex;
     do {
       initialTileIndex = THREE.MathUtils.randInt(GAME_CONFIG.MIN_TILE_INDEX, GAME_CONFIG.MAX_TILE_INDEX);
@@ -66,14 +94,19 @@ export function generateCarLaneMetadata() {
   return { type: "car", direction, speed, vehicles };
 }
 
-// Generate truck lane metadata
-export function generateTruckLaneMetadata() {
+// Generate truck lane metadata with difficulty
+export function generateTruckLaneMetadata(difficultyLevel = 0) {
   const direction = randomElement([true, false]);
-  const speed = randomElement(GAME_CONFIG.VEHICLE_SPEEDS);
+  const baseSpeed = randomElement(GAME_CONFIG.VEHICLE_SPEEDS);
+  const speed = getAdjustedSpeed(baseSpeed, difficultyLevel);
+  const vehicleCount = Math.max(
+    GAME_CONFIG.DIFFICULTY.MIN_VEHICLES_PER_LANE,
+    getVehicleCount(GAME_CONFIG.TRUCKS_PER_LANE, difficultyLevel)
+  );
 
   const occupiedTiles = new Set();
 
-  const vehicles = Array.from({ length: GAME_CONFIG.TRUCKS_PER_LANE }, () => {
+  const vehicles = Array.from({ length: vehicleCount }, () => {
     let initialTileIndex;
     do {
       initialTileIndex = THREE.MathUtils.randInt(GAME_CONFIG.MIN_TILE_INDEX, GAME_CONFIG.MAX_TILE_INDEX);

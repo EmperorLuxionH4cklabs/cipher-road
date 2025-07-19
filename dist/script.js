@@ -5,7 +5,8 @@ import { Bounds } from "https://esm.sh/@react-three/drei";
 import * as THREE from "https://esm.sh/three";
 import { create } from "https://esm.sh/zustand";
 import { GAME_CONFIG, TILES_PER_ROW } from './constants.js';
-import { generateRows, calculateFinalPosition } from './utils.js';
+import { generateRows, calculateFinalPosition, getDifficultyLevel } from './utils.js';
+import { soundSystem } from './sound.js';
 
 const minTileIndex = GAME_CONFIG.MIN_TILE_INDEX;
 const maxTileIndex = GAME_CONFIG.MAX_TILE_INDEX;
@@ -38,12 +39,21 @@ function stepCompleted() {
   if (direction === "left") playerState.currentTile -= 1;
   if (direction === "right") playerState.currentTile += 1;
 
+  // Play movement sound
+  soundSystem.playMoveSound();
+
   // Add new rows if the player is running out of them
   if (playerState.currentRow === useMapStore.getState().rows.length - GAME_CONFIG.SAFE_ROWS_AHEAD) {
     useMapStore.getState().addRows();
   }
 
+  const previousScore = useGameStore.getState().score;
   useGameStore.getState().updateScore(playerState.currentRow);
+  
+  // Play score sound if score increased
+  if (playerState.currentRow > previousScore) {
+    soundSystem.playScoreSound();
+  }
 }
 
 function setPlayerRef(ref) {
@@ -64,18 +74,31 @@ function resetPlayerStore() {
 const useGameStore = create(set => ({
   status: "running", // "running", "paused", "over"
   score: 0,
+  highScore: parseInt(localStorage.getItem('cipher-road-high-score')) || 0,
   cameraShake: 0,
   updateScore: rowIndex => {
-    set(state => ({ score: Math.max(rowIndex, state.score) }));
+    set(state => {
+      const newScore = Math.max(rowIndex, state.score);
+      const newHighScore = Math.max(newScore, state.highScore);
+      if (newHighScore > state.highScore) {
+        localStorage.setItem('cipher-road-high-score', newHighScore.toString());
+      }
+      return { score: newScore, highScore: newHighScore };
+    });
   },
   endGame: () => {
+    soundSystem.playGameOverSound();
     set({ status: "over", cameraShake: 1 });
   },
   togglePause: () => {
-    set(state => ({ 
-      status: state.status === "running" ? "paused" : 
-               state.status === "paused" ? "running" : state.status 
-    }));
+    set(state => {
+      const newStatus = state.status === "running" ? "paused" : 
+                       state.status === "paused" ? "running" : state.status;
+      if (newStatus === "paused") {
+        soundSystem.playPauseSound();
+      }
+      return { status: newStatus };
+    });
   },
   updateCameraShake: (value) => {
     set({ cameraShake: value });
@@ -90,7 +113,8 @@ const useGameStore = create(set => ({
 const useMapStore = create(set => ({
   rows: generateRows(GAME_CONFIG.INITIAL_ROWS),
   addRows: () => {
-    const newRows = generateRows(GAME_CONFIG.INITIAL_ROWS);
+    const currentRowCount = useMapStore.getState().rows.length;
+    const newRows = generateRows(GAME_CONFIG.INITIAL_ROWS, currentRowCount);
     set(state => ({ rows: [...state.rows, ...newRows] }));
   },
   reset: () => set({ rows: generateRows(GAME_CONFIG.INITIAL_ROWS) })
@@ -136,12 +160,25 @@ function Controls() {
   return /*#__PURE__*/(
     React.createElement("div", { id: "controls" }, /*#__PURE__*/
     React.createElement("div", null, /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("forward") }, "\u25B2"), /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("left") }, "\u25C0"), /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("backward") }, "\u25BC"), /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("right") }, "\u25B6")), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("forward"), 
+      "aria-label": "Move forward"
+    }, "\u25B2"), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("left"), 
+      "aria-label": "Move left"
+    }, "\u25C0"), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("backward"), 
+      "aria-label": "Move backward"
+    }, "\u25BC"), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("right"), 
+      "aria-label": "Move right"
+    }, "\u25B6")), /*#__PURE__*/
     React.createElement("button", { 
       onClick: togglePause, 
+      "aria-label": status === "paused" ? "Resume game" : "Pause game",
       style: { 
         marginTop: "10px", 
         padding: "10px 20px",
@@ -152,7 +189,16 @@ function Controls() {
         cursor: "pointer",
         fontFamily: "inherit"
       } 
-    }, status === "paused" ? "Resume" : "Pause")));
+    }, status === "paused" ? "Resume" : "Pause"),
+    React.createElement("div", {
+      style: {
+        marginTop: "10px",
+        fontSize: "12px",
+        color: "white",
+        textAlign: "center",
+        textShadow: "1px 1px 2px rgba(0,0,0,0.8)"
+      }
+    }, "Use arrow keys or buttons • Space/Esc to pause")));
 
 
 
@@ -160,8 +206,14 @@ function Controls() {
 
 function Score() {
   const score = useGameStore(state => state.score);
+  const level = getDifficultyLevel(score) + 1;
 
-  return /*#__PURE__*/React.createElement("div", { id: "score" }, score);
+  return /*#__PURE__*/(
+    React.createElement("div", { id: "score" }, 
+      React.createElement("div", null, "Score: ", score),
+      React.createElement("div", { style: { fontSize: "0.6em", marginTop: "5px" } }, "Level: ", level)
+    )
+  );
 }
 
 function PauseOverlay() {
@@ -183,15 +235,19 @@ function PauseOverlay() {
 function Result() {
   const status = useGameStore(state => state.status);
   const score = useGameStore(state => state.score);
+  const highScore = useGameStore(state => state.highScore);
   const reset = useGameStore(state => state.reset);
 
   if (status !== "over") return null;
 
+  const isNewHighScore = score === highScore && score > 0;
+
   return /*#__PURE__*/(
     React.createElement("div", { id: "result-container" }, /*#__PURE__*/
     React.createElement("div", { id: "result" }, /*#__PURE__*/
-    React.createElement("h1", null, "Game Over"), /*#__PURE__*/
+    React.createElement("h1", null, isNewHighScore ? "New High Score!" : "Game Over"), /*#__PURE__*/
     React.createElement("p", null, "Your score: ", score), /*#__PURE__*/
+    React.createElement("p", null, "High score: ", highScore), /*#__PURE__*/
     React.createElement("button", { onClick: reset }, "Retry"))));
 
 
