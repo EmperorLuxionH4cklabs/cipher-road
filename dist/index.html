@@ -2,16 +2,34 @@
 <html lang="en" >
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cipher Road</title>
   <link rel="stylesheet" href="./style.css">
-
+  <script>
+    // Check if mobile and redirect if needed
+    (function() {
+      const isMobileDevice = () => {
+        const userAgent = navigator.userAgent.toLowerCase();
+        const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
+        const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+        const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+        const isSmallScreen = window.innerWidth <= 768;
+        
+        return isMobileUA || (isTouchDevice && isSmallScreen);
+      };
+      
+      // Redirect mobile users to mobile.html
+      if (isMobileDevice() && !window.location.pathname.includes('mobile.html')) {
+        window.location.href = './mobile.html';
+      }
+    })();
+  </script>
 </head>
 <body>
-<!-- partial:index.partial.html -->
+<!-- Desktop version of Cipher Road -->
 
 <div id="root" />
-<!-- partial -->
-  <script type="module" src="./script.js"></script>
+<script type="module" src="./script.js"></script>
 
 </body>
 </html>

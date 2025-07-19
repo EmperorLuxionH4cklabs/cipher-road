@@ -155,3 +155,78 @@ export function calculateFinalPosition(currentPosition, moves) {
     return position;
   }, currentPosition);
 }
+
+// Mobile device detection
+export function isMobileDevice() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  const mobileKeywords = ['mobile', 'android', 'iphone', 'ipad', 'ipod', 'blackberry', 'windows phone'];
+  const isMobileUA = mobileKeywords.some(keyword => userAgent.includes(keyword));
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const isSmallScreen = window.innerWidth <= 768;
+  
+  return isMobileUA || (isTouchDevice && isSmallScreen);
+}
+
+// Touch gesture detection utilities
+export function createSwipeDetector(element, threshold = 50) {
+  let startX = 0;
+  let startY = 0;
+  let startTime = 0;
+  
+  const handleTouchStart = (e) => {
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    startTime = Date.now();
+  };
+  
+  const handleTouchEnd = (e) => {
+    if (!startX || !startY) return;
+    
+    const touch = e.changedTouches[0];
+    const endX = touch.clientX;
+    const endY = touch.clientY;
+    const deltaTime = Date.now() - startTime;
+    
+    const deltaX = endX - startX;
+    const deltaY = endY - startY;
+    
+    // Only process quick swipes (under 300ms)
+    if (deltaTime > 300) return;
+    
+    const absDeltaX = Math.abs(deltaX);
+    const absDeltaY = Math.abs(deltaY);
+    
+    // Determine swipe direction
+    if (absDeltaX > absDeltaY && absDeltaX > threshold) {
+      return deltaX > 0 ? 'right' : 'left';
+    } else if (absDeltaY > absDeltaX && absDeltaY > threshold) {
+      return deltaY > 0 ? 'backward' : 'forward';
+    }
+    
+    return null;
+  };
+  
+  element.addEventListener('touchstart', handleTouchStart, { passive: true });
+  element.addEventListener('touchend', handleTouchEnd, { passive: true });
+  
+  return {
+    destroy: () => {
+      element.removeEventListener('touchstart', handleTouchStart);
+      element.removeEventListener('touchend', handleTouchEnd);
+    },
+    onSwipe: (callback) => {
+      const originalTouchEnd = handleTouchEnd;
+      element.removeEventListener('touchend', originalTouchEnd);
+      
+      const newTouchEnd = (e) => {
+        const direction = originalTouchEnd(e);
+        if (direction && callback) {
+          callback(direction);
+        }
+      };
+      
+      element.addEventListener('touchend', newTouchEnd, { passive: true });
+    }
+  };
+}

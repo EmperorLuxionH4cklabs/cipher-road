@@ -1,12 +1,25 @@
-import React, { useRef, useEffect } from "https://esm.sh/react";
+import React, { useRef, useEffect, useState } from "https://esm.sh/react";
 import { createRoot } from "https://esm.sh/react-dom/client";
 import { Canvas, useFrame, useThree } from "https://esm.sh/@react-three/fiber";
 import { Bounds } from "https://esm.sh/@react-three/drei";
 import * as THREE from "https://esm.sh/three";
 import { create } from "https://esm.sh/zustand";
 import { GAME_CONFIG, TILES_PER_ROW } from './constants.js';
-import { generateRows, calculateFinalPosition, getDifficultyLevel } from './utils.js';
+import { generateRows, calculateFinalPosition, getDifficultyLevel, isMobileDevice, createSwipeDetector } from './utils.js';
 import { soundSystem } from './sound.js';
+
+// Mobile device auto-redirect (unless already on mobile page or forced)
+if (typeof window !== 'undefined' && !window.FORCE_MOBILE_MODE) {
+  const isMobile = isMobileDevice();
+  const currentPath = window.location.pathname;
+  
+  // Redirect mobile users to mobile.html if not already there
+  if (isMobile && !currentPath.includes('mobile.html')) {
+    const currentUrl = new URL(window.location);
+    currentUrl.pathname = currentUrl.pathname.replace(/\/[^\/]*$/, '/mobile.html');
+    window.location.href = currentUrl.toString();
+  }
+}
 
 const minTileIndex = GAME_CONFIG.MIN_TILE_INDEX;
 const maxTileIndex = GAME_CONFIG.MAX_TILE_INDEX;
@@ -156,52 +169,146 @@ function Controls() {
   useEventListeners();
   const togglePause = useGameStore(state => state.togglePause);
   const status = useGameStore(state => state.status);
+  const [isMobile, setIsMobile] = useState(false);
+  const [showMobileInfo, setShowMobileInfo] = useState(false);
+
+  useEffect(() => {
+    const mobile = window.FORCE_MOBILE_MODE || isMobileDevice();
+    setIsMobile(mobile);
+    
+    if (mobile) {
+      // Show mobile info briefly when game loads
+      setShowMobileInfo(true);
+      const timer = setTimeout(() => setShowMobileInfo(false), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  const handleButtonPress = (direction) => {
+    queueMove(direction);
+    // Add haptic feedback on mobile if available
+    if (isMobile && navigator.vibrate) {
+      navigator.vibrate(50);
+    }
+  };
 
   return /*#__PURE__*/(
-    React.createElement("div", { id: "controls" }, /*#__PURE__*/
-    React.createElement("div", null, /*#__PURE__*/
-    React.createElement("button", { 
-      onClick: () => queueMove("forward"), 
-      "aria-label": "Move forward"
-    }, "\u25B2"), /*#__PURE__*/
-    React.createElement("button", { 
-      onClick: () => queueMove("left"), 
-      "aria-label": "Move left"
-    }, "\u25C0"), /*#__PURE__*/
-    React.createElement("button", { 
-      onClick: () => queueMove("backward"), 
-      "aria-label": "Move backward"
-    }, "\u25BC"), /*#__PURE__*/
-    React.createElement("button", { 
-      onClick: () => queueMove("right"), 
-      "aria-label": "Move right"
-    }, "\u25B6")), /*#__PURE__*/
-    React.createElement("button", { 
-      onClick: togglePause, 
-      "aria-label": status === "paused" ? "Resume game" : "Pause game",
-      style: { 
-        marginTop: "10px", 
-        padding: "10px 20px",
-        backgroundColor: status === "paused" ? "#4CAF50" : "#f44336",
-        color: "white",
-        border: "none",
-        borderRadius: "5px",
-        cursor: "pointer",
-        fontFamily: "inherit"
-      } 
-    }, status === "paused" ? "Resume" : "Pause"),
-    React.createElement("div", {
-      style: {
-        marginTop: "10px",
-        fontSize: "12px",
-        color: "white",
-        textAlign: "center",
-        textShadow: "1px 1px 2px rgba(0,0,0,0.8)"
+    React.createElement(React.Fragment, null,
+      // Mobile swipe zone
+      isMobile && React.createElement(MobileSwipeZone, null),
+      
+      // Mobile info overlay
+      isMobile && showMobileInfo && /*#__PURE__*/
+      React.createElement("div", { className: "mobile-controls-info" },
+        "Swipe to move or use buttons below", /*#__PURE__*/
+        React.createElement("br", null),
+        "Tap anywhere to dismiss"
+      ),
+
+      /*#__PURE__*/React.createElement("div", { 
+        id: "controls",
+        onClick: isMobile && showMobileInfo ? () => setShowMobileInfo(false) : undefined
+      }, /*#__PURE__*/
+      React.createElement("div", null, /*#__PURE__*/
+      React.createElement("button", { 
+        onClick: () => handleButtonPress("forward"), 
+        "aria-label": "Move forward",
+        style: isMobile ? { 
+          background: 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+          border: '2px solid #ddd'
+        } : {}
+      }, "▲"), /*#__PURE__*/
+      React.createElement("button", { 
+        onClick: () => handleButtonPress("left"), 
+        "aria-label": "Move left",
+        style: isMobile ? { 
+          background: 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+          border: '2px solid #ddd'
+        } : {}
+      }, "◀"), /*#__PURE__*/
+      React.createElement("button", { 
+        onClick: () => handleButtonPress("backward"), 
+        "aria-label": "Move backward",
+        style: isMobile ? { 
+          background: 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+          border: '2px solid #ddd'
+        } : {}
+      }, "▼"), /*#__PURE__*/
+      React.createElement("button", { 
+        onClick: () => handleButtonPress("right"), 
+        "aria-label": "Move right",
+        style: isMobile ? { 
+          background: 'linear-gradient(145deg, #ffffff, #f0f0f0)',
+          border: '2px solid #ddd'
+        } : {}
+      }, "▶")), /*#__PURE__*/
+      React.createElement("button", { 
+        onClick: togglePause, 
+        "aria-label": status === "paused" ? "Resume game" : "Pause game",
+        style: { 
+          marginTop: "10px", 
+          padding: isMobile ? "15px 30px" : "10px 20px",
+          backgroundColor: status === "paused" ? "#4CAF50" : "#f44336",
+          color: "white",
+          border: "none",
+          borderRadius: isMobile ? "10px" : "5px",
+          cursor: "pointer",
+          fontFamily: "inherit",
+          fontSize: isMobile ? "16px" : "inherit"
+        } 
+      }, status === "paused" ? "Resume" : "Pause"),
+      React.createElement("div", {
+        style: {
+          marginTop: "10px",
+          fontSize: isMobile ? "10px" : "12px",
+          color: "white",
+          textAlign: "center",
+          textShadow: "1px 1px 2px rgba(0,0,0,0.8)"
+        }
+      }, isMobile ? "Swipe or tap buttons • Tap pause" : "Use arrow keys or buttons • Space/Esc to pause"))
+    )
+  );
+}
+
+function MobileSwipeZone() {
+  const gameRef = useRef(null);
+  const status = useGameStore(state => state.status);
+
+  useEffect(() => {
+    if (!gameRef.current || status !== "running") return;
+
+    const swipeDetector = createSwipeDetector(gameRef.current);
+    
+    swipeDetector.onSwipe((direction) => {
+      if (status === "running") {
+        queueMove(direction);
+        // Add haptic feedback
+        if (navigator.vibrate) {
+          navigator.vibrate(30);
+        }
       }
-    }, "Use arrow keys or buttons • Space/Esc to pause")));
+    });
 
+    return () => {
+      swipeDetector.destroy();
+    };
+  }, [status]);
 
-
+  return /*#__PURE__*/(
+    React.createElement("div", { 
+      ref: gameRef,
+      className: "mobile-swipe-zone",
+      style: {
+        position: "absolute",
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        zIndex: 1,
+        pointerEvents: status === "running" ? "auto" : "none"
+      }
+    })
+  );
 }
 
 function Score() {
