@@ -1,0 +1,21 @@
+{
+  "name": "cipher-road",
+  "version": "1.0.0",
+  "description": "Crossy Road clone built with React Three Fiber",
+  "main": "dist/script.js",
+  "scripts": {
+    "dev": "python3 -m http.server 8000",
+    "build": "echo 'No build process configured yet'"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "@react-three/fiber": "^8.15.16",
+    "@react-three/drei": "^9.95.0",
+    "three": "^0.160.0",
+    "zustand": "^4.4.7"
+  },
+  "keywords": ["game", "crossy-road", "react", "three.js"],
+  "author": "",
+  "license": "MIT"
+}

@@ -44,6 +44,18 @@ body {
   outline: none;
   /* Increase the default font size for the arrows */
   font-size: 20px;
+  transition: all 0.1s ease;
+}
+
+#controls button:hover {
+  background-color: #f0f0f0;
+  transform: translateY(1px);
+  box-shadow: 2px 4px 0px 0px rgba(0, 0, 0, 0.75);
+}
+
+#controls button:active {
+  transform: translateY(2px);
+  box-shadow: 1px 3px 0px 0px rgba(0, 0, 0, 0.75);
 }
 
 #controls button:first-of-type {
@@ -112,4 +124,14 @@ body {
   border: none;
   border-radius: 5px;
   margin-top: 10px;
+  transition: all 0.2s ease;
+}
+
+#result button:hover {
+  background-color: #cc0000;
+  transform: scale(1.05);
+}
+
+#result button:active {
+  transform: scale(0.95);
 }
