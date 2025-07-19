@@ -121,6 +121,10 @@ The modular architecture makes it easy to add:
 - Touch events for mobile devices
 - LocalStorage for high score persistence
 
+## Screenshot Description
+
+The provided screenshot shows a blank white page, which represents the game's loading state when external CDN resources (React, Three.js, React Three Fiber, Zustand) are blocked or fail to load. This typically occurs in restricted network environments or when CDN services are unavailable. In normal operation, this page would display the 3D Crossy Road game with a cyberpunk-themed owl character navigating through procedurally generated obstacles.
+
 ## Credits
 Built with:
 - [React Three Fiber](https://github.com/pmndrs/react-three-fiber)
