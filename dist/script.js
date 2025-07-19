@@ -1444,11 +1444,11 @@ function useVehicleAnimation(ref, direction, speed) {
 
     const playerY = playerState.currentRow * tileSize;
 
-    const distanceBehindPlayer = playerY - vehicle.position.y;
+    // Removed distanceBehindPlayer calculation as it's no longer needed
 
-    // Only hide vehicles that are significantly behind the player
+    // Only hide vehicles that are far behind (not ahead of) the player
 
-    if (distanceBehindPlayer > 8 * tileSize) {
+    if (vehicle.position.y < playerY - 8 * tileSize) {
 
       vehicle.visible = false;
 
