@@ -64,23 +64,127 @@ body {
 
 /* --- Mobile View Adjustments --- */
 @media (max-width: 768px) {
+  body {
+    /* Prevent zooming on mobile */
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+
   #controls {
-    /* Give the controls a bit more space from the bottom on mobile */
-    bottom: 30px;
+    /* Give the controls more space and better positioning on mobile */
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: auto;
+    width: auto;
   }
 
   #controls div {
-    /* Increase the size of the grid columns for larger buttons */
-    grid-template-columns: 80px 80px 80px;
-    /* Increase the gap between buttons */
-    gap: 20px;
+    /* Larger grid for better touch targets */
+    grid-template-columns: 90px 90px 90px;
+    gap: 15px;
   }
 
   #controls button {
-    /* Increase the height of the buttons for easier tapping */
+    /* Much larger buttons for easier touch */
+    height: 70px;
+    font-size: 28px;
+    border-radius: 15px;
+    /* Better touch feedback */
+    transition: all 0.15s ease;
+    /* Prevent text selection */
+    user-select: none;
+    -webkit-user-select: none;
+    /* Improve touch responsiveness */
+    touch-action: manipulation;
+  }
+
+  #controls button:active {
+    transform: translateY(3px) scale(0.95);
+    box-shadow: 1px 2px 0px 0px rgba(0, 0, 0, 0.75);
+    background-color: #e0e0e0;
+  }
+
+  /* Pause button adjustments for mobile */
+  #controls > button {
+    margin-top: 15px;
+    padding: 15px 30px;
+    font-size: 16px;
+    height: auto;
+    border-radius: 10px;
+  }
+
+  /* Score adjustments for mobile */
+  #score {
+    font-size: 1.5em;
+    top: 15px;
+    left: 15px;
+  }
+
+  /* Game instructions for mobile */
+  #controls > div + div {
+    font-size: 10px;
+    margin-top: 8px;
+  }
+}
+
+/* --- Enhanced Mobile Controls for very small screens --- */
+@media (max-width: 480px) {
+  #controls div {
+    grid-template-columns: 85px 85px 85px;
+    gap: 12px;
+  }
+
+  #controls button {
     height: 65px;
-    /* Make the arrow icons larger */
-    font-size: 32px;
+    font-size: 24px;
+  }
+
+  #score {
+    font-size: 1.2em;
+  }
+}
+
+/* --- Mobile-specific swipe zone --- */
+.mobile-swipe-zone {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.mobile-controls-info {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  text-align: center;
+  font-size: 14px;
+  line-height: 1.4;
+  z-index: 100;
+  animation: fadeInOut 4s ease-in-out;
+}
+
+@keyframes fadeInOut {
+  0%, 100% { opacity: 0; }
+  10%, 90% { opacity: 1; }
+}
+
+/* Hide mobile info on desktop */
+@media (min-width: 769px) {
+  .mobile-swipe-zone,
+  .mobile-controls-info {
+    display: none;
   }
 }
 
