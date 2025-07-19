@@ -4,11 +4,14 @@ import { Canvas, useFrame, useThree } from "https://esm.sh/@react-three/fiber";
 import { Bounds } from "https://esm.sh/@react-three/drei";
 import * as THREE from "https://esm.sh/three";
 import { create } from "https://esm.sh/zustand";
+import { GAME_CONFIG, TILES_PER_ROW } from './constants.js';
+import { generateRows, calculateFinalPosition, getDifficultyLevel } from './utils.js';
+import { soundSystem } from './sound.js';
 
-const minTileIndex = -8;
-const maxTileIndex = 8;
-const tilesPerRow = maxTileIndex - minTileIndex + 1;
-const tileSize = 42;
+const minTileIndex = GAME_CONFIG.MIN_TILE_INDEX;
+const maxTileIndex = GAME_CONFIG.MAX_TILE_INDEX;
+const tilesPerRow = TILES_PER_ROW;
+const tileSize = GAME_CONFIG.TILE_SIZE;
 
 const playerState = {
   currentRow: 0,
@@ -36,12 +39,21 @@ function stepCompleted() {
   if (direction === "left") playerState.currentTile -= 1;
   if (direction === "right") playerState.currentTile += 1;
 
+  // Play movement sound
+  soundSystem.playMoveSound();
+
   // Add new rows if the player is running out of them
-  if (playerState.currentRow === useMapStore.getState().rows.length - 10) {
+  if (playerState.currentRow === useMapStore.getState().rows.length - GAME_CONFIG.SAFE_ROWS_AHEAD) {
     useMapStore.getState().addRows();
   }
 
+  const previousScore = useGameStore.getState().score;
   useGameStore.getState().updateScore(playerState.currentRow);
+  
+  // Play score sound if score increased
+  if (playerState.currentRow > previousScore) {
+    soundSystem.playScoreSound();
+  }
 }
 
 function setPlayerRef(ref) {
@@ -60,28 +72,53 @@ function resetPlayerStore() {
 }
 
 const useGameStore = create(set => ({
-  status: "running",
+  status: "running", // "running", "paused", "over"
   score: 0,
+  highScore: parseInt(localStorage.getItem('cipher-road-high-score')) || 0,
+  cameraShake: 0,
   updateScore: rowIndex => {
-    set(state => ({ score: Math.max(rowIndex, state.score) }));
+    set(state => {
+      const newScore = Math.max(rowIndex, state.score);
+      const newHighScore = Math.max(newScore, state.highScore);
+      if (newHighScore > state.highScore) {
+        localStorage.setItem('cipher-road-high-score', newHighScore.toString());
+      }
+      return { score: newScore, highScore: newHighScore };
+    });
   },
   endGame: () => {
-    set({ status: "over" });
+    soundSystem.playGameOverSound();
+    set({ status: "over", cameraShake: 1 });
+  },
+  togglePause: () => {
+    set(state => {
+      const newStatus = state.status === "running" ? "paused" : 
+                       state.status === "paused" ? "running" : state.status;
+      if (newStatus === "paused") {
+        soundSystem.playPauseSound();
+      }
+      return { status: newStatus };
+    });
+  },
+  updateCameraShake: (value) => {
+    set({ cameraShake: value });
   },
   reset: () => {
     useMapStore.getState().reset();
     resetPlayerStore();
-    set({ status: "running", score: 0 });
+    set({ status: "running", score: 0, cameraShake: 0 });
   } }));
 
 
 const useMapStore = create(set => ({
-  rows: generateRows(20),
+  rows: generateRows(GAME_CONFIG.INITIAL_ROWS),
   addRows: () => {
-    const newRows = generateRows(20);
+    const currentRowCount = useMapStore.getState().rows.length;
+    const newRows = generateRows(GAME_CONFIG.INITIAL_ROWS, currentRowCount);
     set(state => ({ rows: [...state.rows, ...newRows] }));
   },
-  reset: () => set({ rows: generateRows(20) }) }));
+  reset: () => set({ rows: generateRows(GAME_CONFIG.INITIAL_ROWS) })
+}));
 
 
 function Game() {
@@ -93,6 +130,7 @@ function Game() {
 
     React.createElement(Score, null), /*#__PURE__*/
     React.createElement(Controls, null), /*#__PURE__*/
+    React.createElement(PauseOverlay, null), /*#__PURE__*/
     React.createElement(Result, null)));
 
 
@@ -116,14 +154,51 @@ const Scene = ({ children }) => {
 
 function Controls() {
   useEventListeners();
+  const togglePause = useGameStore(state => state.togglePause);
+  const status = useGameStore(state => state.status);
 
   return /*#__PURE__*/(
     React.createElement("div", { id: "controls" }, /*#__PURE__*/
     React.createElement("div", null, /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("forward") }, "\u25B2"), /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("left") }, "\u25C0"), /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("backward") }, "\u25BC"), /*#__PURE__*/
-    React.createElement("button", { onClick: () => queueMove("right") }, "\u25B6"))));
+    React.createElement("button", { 
+      onClick: () => queueMove("forward"), 
+      "aria-label": "Move forward"
+    }, "\u25B2"), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("left"), 
+      "aria-label": "Move left"
+    }, "\u25C0"), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("backward"), 
+      "aria-label": "Move backward"
+    }, "\u25BC"), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: () => queueMove("right"), 
+      "aria-label": "Move right"
+    }, "\u25B6")), /*#__PURE__*/
+    React.createElement("button", { 
+      onClick: togglePause, 
+      "aria-label": status === "paused" ? "Resume game" : "Pause game",
+      style: { 
+        marginTop: "10px", 
+        padding: "10px 20px",
+        backgroundColor: status === "paused" ? "#4CAF50" : "#f44336",
+        color: "white",
+        border: "none",
+        borderRadius: "5px",
+        cursor: "pointer",
+        fontFamily: "inherit"
+      } 
+    }, status === "paused" ? "Resume" : "Pause"),
+    React.createElement("div", {
+      style: {
+        marginTop: "10px",
+        fontSize: "12px",
+        color: "white",
+        textAlign: "center",
+        textShadow: "1px 1px 2px rgba(0,0,0,0.8)"
+      }
+    }, "Use arrow keys or buttons • Space/Esc to pause")));
 
 
 
@@ -131,22 +206,48 @@ function Controls() {
 
 function Score() {
   const score = useGameStore(state => state.score);
+  const level = getDifficultyLevel(score) + 1;
 
-  return /*#__PURE__*/React.createElement("div", { id: "score" }, score);
+  return /*#__PURE__*/(
+    React.createElement("div", { id: "score" }, 
+      React.createElement("div", null, "Score: ", score),
+      React.createElement("div", { style: { fontSize: "0.6em", marginTop: "5px" } }, "Level: ", level)
+    )
+  );
+}
+
+function PauseOverlay() {
+  const status = useGameStore(state => state.status);
+  const togglePause = useGameStore(state => state.togglePause);
+
+  if (status !== "paused") return null;
+
+  return /*#__PURE__*/(
+    React.createElement("div", { id: "result-container" }, /*#__PURE__*/
+    React.createElement("div", { id: "result" }, /*#__PURE__*/
+    React.createElement("h1", null, "Game Paused"), /*#__PURE__*/
+    React.createElement("p", null, "Press Space/Escape or click Resume to continue"), /*#__PURE__*/
+    React.createElement("button", { onClick: togglePause }, "Resume"))));
+
+
 }
 
 function Result() {
   const status = useGameStore(state => state.status);
   const score = useGameStore(state => state.score);
+  const highScore = useGameStore(state => state.highScore);
   const reset = useGameStore(state => state.reset);
 
-  if (status === "running") return null;
+  if (status !== "over") return null;
+
+  const isNewHighScore = score === highScore && score > 0;
 
   return /*#__PURE__*/(
     React.createElement("div", { id: "result-container" }, /*#__PURE__*/
     React.createElement("div", { id: "result" }, /*#__PURE__*/
-    React.createElement("h1", null, "Game Over"), /*#__PURE__*/
+    React.createElement("h1", null, isNewHighScore ? "New High Score!" : "Game Over"), /*#__PURE__*/
     React.createElement("p", null, "Your score: ", score), /*#__PURE__*/
+    React.createElement("p", null, "High score: ", highScore), /*#__PURE__*/
     React.createElement("button", { onClick: reset }, "Retry"))));
 
 
@@ -157,8 +258,23 @@ function Player() {
   const player = useRef(null);
   const lightRef = useRef(null);
   const camera = useThree(state => state.camera);
+  const cameraShake = useGameStore(state => state.cameraShake);
+  const updateCameraShake = useGameStore(state => state.updateCameraShake);
 
   usePlayerAnimation(player);
+
+  // Camera shake effect
+  useFrame(() => {
+    if (!camera || cameraShake <= 0) return;
+    
+    const intensity = cameraShake * 20;
+    camera.position.x += (Math.random() - 0.5) * intensity;
+    camera.position.y += (Math.random() - 0.5) * intensity;
+    camera.position.z += (Math.random() - 0.5) * intensity;
+    
+    // Gradually reduce shake
+    updateCameraShake(Math.max(0, cameraShake - 0.05));
+  });
 
   useEffect(() => {
     if (!player.current) return;
@@ -490,7 +606,19 @@ function Wheel({ x }) {
 function useVehicleAnimation(ref, direction, speed) {
   useFrame((state, delta) => {
     if (!ref.current) return;
+    const status = useGameStore.getState().status;
+    if (status !== "running") return; // Pause vehicles when game is paused
+    
     const vehicle = ref.current;
+
+    // Performance optimization: only animate vehicles near the player
+    const distanceFromPlayer = Math.abs(vehicle.position.y - playerState.currentRow * tileSize);
+    if (distanceFromPlayer > 5 * tileSize) {
+      vehicle.visible = false;
+      return;
+    } else {
+      vehicle.visible = true;
+    }
 
     const beginningOfRow = (minTileIndex - 2) * tileSize;
     const endOfRow = (maxTileIndex + 2) * tileSize;
@@ -524,6 +652,9 @@ function useEventListeners() {
       } else if (event.key === "ArrowRight") {
         event.preventDefault();
         queueMove("right");
+      } else if (event.key === " " || event.key === "Escape") {
+        event.preventDefault();
+        useGameStore.getState().togglePause();
       }
     };
 
@@ -538,15 +669,17 @@ function useEventListeners() {
 
 function usePlayerAnimation(ref) {
   const moveClock = new THREE.Clock(false);
+  const status = useGameStore(state => state.status);
 
   useFrame(() => {
     if (!ref.current) return;
+    if (status !== "running") return; // Pause movement when game is paused
     if (!playerState.movesQueue.length) return;
     const player = ref.current;
 
     if (!moveClock.running) moveClock.start();
 
-    const stepTime = 0.2; // Seconds it takes to take a step
+    const stepTime = GAME_CONFIG.STEP_TIME;
     const progress = Math.min(1, moveClock.getElapsedTime() / stepTime);
 
     setPosition(player, progress);
@@ -573,8 +706,8 @@ function setPosition(player, progress) {
 
   player.position.x = THREE.MathUtils.lerp(startX, endX, progress);
   player.position.y = THREE.MathUtils.lerp(startY, endY, progress);
-  // I've added a base height of 10 to prevent the model from clipping through the ground
-  player.children[0].position.z = 10 + Math.sin(progress * Math.PI) * 8;
+  // Use constants for player height
+  player.children[0].position.z = GAME_CONFIG.PLAYER_BASE_HEIGHT + Math.sin(progress * Math.PI) * GAME_CONFIG.PLAYER_JUMP_HEIGHT;
 }
 
 function setRotation(player, progress) {
@@ -589,32 +722,6 @@ function setRotation(player, progress) {
   endRotation,
   progress);
 
-}
-
-function calculateFinalPosition(currentPosition, moves) {
-  return moves.reduce((position, direction) => {
-    if (direction === "forward")
-    return {
-      rowIndex: position.rowIndex + 1,
-      tileIndex: position.tileIndex };
-
-    if (direction === "backward")
-    return {
-      rowIndex: position.rowIndex - 1,
-      tileIndex: position.tileIndex };
-
-    if (direction === "left")
-    return {
-      rowIndex: position.rowIndex,
-      tileIndex: position.tileIndex - 1 };
-
-    if (direction === "right")
-    return {
-      rowIndex: position.rowIndex,
-      tileIndex: position.tileIndex + 1 };
-
-    return position;
-  }, currentPosition);
 }
 
 function endsUpInValidPosition(currentPosition, moves) {
@@ -645,97 +752,14 @@ function endsUpInValidPosition(currentPosition, moves) {
   return true;
 }
 
-function generateRows(amount) {
-  const rows = [];
-  for (let i = 0; i < amount; i++) {
-    const rowData = generateRow();
-    rows.push(rowData);
-  }
-  return rows;
-}
-
-function generateRow() {
-  const type = randomElement(["car", "truck", "forest"]);
-  if (type === "car") return generateCarLaneMetadata();
-  if (type === "truck") return generateTruckLaneMetadata();
-  return generateForesMetadata();
-}
-
-function randomElement(array) {
-  return array[Math.floor(Math.random() * array.length)];
-}
-
-function generateForesMetadata() {
-  const occupiedTiles = new Set();
-  const trees = Array.from({ length: 4 }, () => {
-    let tileIndex;
-    do {
-      tileIndex = THREE.MathUtils.randInt(minTileIndex, maxTileIndex);
-    } while (occupiedTiles.has(tileIndex));
-    occupiedTiles.add(tileIndex);
-
-    const height = randomElement([20, 45, 60]);
-
-    return { tileIndex, height };
-  });
-
-  return { type: "forest", trees };
-}
-
-function generateCarLaneMetadata() {
-  const direction = randomElement([true, false]);
-  const speed = randomElement([125, 156, 188]);
-
-  const occupiedTiles = new Set();
-
-  const vehicles = Array.from({ length: 3 }, () => {
-    let initialTileIndex;
-    do {
-      initialTileIndex = THREE.MathUtils.randInt(minTileIndex, maxTileIndex);
-    } while (occupiedTiles.has(initialTileIndex));
-    occupiedTiles.add(initialTileIndex - 1);
-    occupiedTiles.add(initialTileIndex);
-    occupiedTiles.add(initialTileIndex + 1);
-
-    const color = randomElement([0xa52523, 0xbdb638, 0x78b14b]);
-
-    return { initialTileIndex, color };
-  });
-
-  return { type: "car", direction, speed, vehicles };
-}
-
-function generateTruckLaneMetadata() {
-  const direction = randomElement([true, false]);
-  const speed = randomElement([125, 156, 188]);
-
-  const occupiedTiles = new Set();
-
-  const vehicles = Array.from({ length: 2 }, () => {
-    let initialTileIndex;
-    do {
-      initialTileIndex = THREE.MathUtils.randInt(minTileIndex, maxTileIndex);
-    } while (occupiedTiles.has(initialTileIndex));
-    occupiedTiles.add(initialTileIndex - 2);
-    occupiedTiles.add(initialTileIndex - 1);
-    occupiedTiles.add(initialTileIndex);
-    occupiedTiles.add(initialTileIndex + 1);
-    occupiedTiles.add(initialTileIndex + 2);
-
-    const color = randomElement([0xa52523, 0xbdb638, 0x78b14b]);
-
-    return { initialTileIndex, color };
-  });
-
-  return { type: "truck", direction, speed, vehicles };
-}
-
 function useHitDetection(vehicle, rowIndex) {
   const endGame = useGameStore(state => state.endGame);
 
   useFrame(() => {
     if (!vehicle.current) return;
     if (!playerState.ref) return;
+    const status = useGameStore.getState().status;
+    if (status !== "running") return; // Don't detect hits when paused
 
     if (
     rowIndex === playerState.currentRow ||
