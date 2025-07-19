@@ -14,6 +14,9 @@ export const GAME_CONFIG = {
   INITIAL_ROWS: 20,
   SAFE_ROWS_AHEAD: 10, // Add new rows when player is this close to the end
   
+  // Performance optimization
+  VEHICLE_VISIBILITY_DISTANCE: 15, // Distance in tiles beyond which vehicles become invisible
+  
   // Vehicle speeds (pixels per second)
   VEHICLE_SPEEDS: [125, 156, 188],
   

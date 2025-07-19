@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Visibility Test - Cipher Road</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .test-instructions {
+            background: #333;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .game-container {
+            border: 2px solid #555;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        h1 { color: #4CAF50; }
+        h2 { color: #2196F3; }
+        .step { margin: 10px 0; }
+        .expected { color: #4CAF50; }
+        .bug { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>🚗 Vehicle Visibility Test</h1>
+    
+    <div class="test-instructions">
+        <h2>Test Instructions</h2>
+        <p>This test helps verify that the vehicle visibility fix is working correctly.</p>
+        
+        <h3>🎯 How to Test:</h3>
+        <div class="step">1. Start the game by opening the main game page</div>
+        <div class="step">2. Move the player forward 5-10 times using arrow keys or buttons</div>
+        <div class="step">3. Look at vehicles/obstacles in lanes around you</div>
+        <div class="step">4. Move backward 5-10 times</div>
+        <div class="step">5. Look at vehicles/obstacles again</div>
+        
+        <h3>✅ Expected Behavior (Fixed):</h3>
+        <div class="expected">• Vehicles should remain visible throughout player movement</div>
+        <div class="expected">• Cars and trucks should appear and disappear smoothly based on distance</div>
+        <div class="expected">• No sudden popping or disappearing of nearby obstacles</div>
+        <div class="expected">• Obstacles should be visible in a reasonable radius around the player</div>
+        
+        <h3>❌ Bug Behavior (Original Issue):</h3>
+        <div class="bug">• Vehicles become completely invisible after a few player movements</div>
+        <div class="bug">• Obstacles don't reappear when player moves back</div>
+        <div class="bug">• Game feels empty or broken due to missing obstacles</div>
+        
+        <h3>🔧 Technical Details:</h3>
+        <p>The fix increases the vehicle visibility distance from 5 tiles to 15 tiles, ensuring vehicles remain visible within the camera's field of view while maintaining performance optimization for distant objects.</p>
+    </div>
+    
+    <div class="game-container">
+        <iframe src="./dist/index.html" width="100%" height="600" frameborder="0">
+            Your browser doesn't support iframes. Please open <a href="./dist/index.html">dist/index.html</a> directly.
+        </iframe>
+    </div>
+    
+    <div class="test-instructions">
+        <h2>🐛 Still Experiencing Issues?</h2>
+        <p>If you still see vehicles disappearing, please check:</p>
+        <ul>
+            <li>Browser console for any JavaScript errors</li>
+            <li>Whether the issue occurs consistently or only in certain scenarios</li>
+            <li>If it happens with cars, trucks, or both types of obstacles</li>
+            <li>Whether trees/forest obstacles are affected</li>
+        </ul>
+    </div>
+</body>
+</html>
